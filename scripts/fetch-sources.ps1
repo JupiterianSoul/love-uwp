@@ -63,10 +63,11 @@ foreach ($src in $sources) {
 }
 
 $love = Join-Path $deps 'love-11.5'
-Push-Location $love
-git apply --whitespace=nowarn (Join-Path $root 'patches/love-11.5-uwp.patch')
-$code = $LASTEXITCODE
-Pop-Location
-if ($code -ne 0) { throw 'Applying the LOVE patch failed' }
+git -C $love init -q
+git -C $love apply --whitespace=nowarn (Join-Path $root 'patches/love-11.5-uwp.patch')
+if ($LASTEXITCODE -ne 0) { throw 'Applying the LOVE patch failed' }
+if (-not (Select-String -Path (Join-Path $love 'src/love.cpp') -Pattern 'love_uwp_setup_view' -Quiet)) {
+    throw 'The LOVE patch did not apply'
+}
 
 Write-Host 'Sources ready in' $deps
