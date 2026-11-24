@@ -1,0 +1,191 @@
+diff --git i/src/libraries/enet/libenet/win32.c w/src/libraries/enet/libenet/win32.c
+index 5cc1679..76843a0 100644
+--- i/src/libraries/enet/libenet/win32.c
++++ w/src/libraries/enet/libenet/win32.c
+@@ -28,7 +28,9 @@ enet_initialize (void)
+        return -1;
+     }
+ 
++#if !defined(WINAPI_FAMILY) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+     timeBeginPeriod (1);
++#endif
+ 
+     return 0;
+ }
+@@ -36,7 +38,9 @@ enet_initialize (void)
+ void
+ enet_deinitialize (void)
+ {
++#if !defined(WINAPI_FAMILY) || WINAPI_FAMILY_PARTITION(WINAPI_PARTITION_DESKTOP)
+     timeEndPeriod (1);
++#endif
+ 
+     WSACleanup ();
+ }
+diff --git i/src/love.cpp w/src/love.cpp
+index 97673a3..4992231 100644
+--- i/src/love.cpp
++++ w/src/love.cpp
+@@ -30,6 +30,9 @@ extern "C" {
+ 	#include <lua.h>
+ 	#include <lualib.h>
+ 	#include <lauxlib.h>
++#ifdef LOVE_WINDOWS_UWP
++	#include <luajit.h>
++#endif
+ }
+ 
+ #ifdef LOVE_WINDOWS
+@@ -61,6 +64,56 @@ LOVE_EXPORT DWORD AmdPowerXpressRequestHighPerformance = 1;
+ }
+ #endif // LOVE_WINDOWS
+ 
++#ifdef LOVE_WINDOWS_UWP
++
++#include <string>
++#include <vector>
++#include <sys/stat.h>
++
++static bool uwp_path_exists(const std::string &path)
++{
++	int len = MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, nullptr, 0);
++	if (len <= 0)
++		return false;
++	std::wstring wpath(len, L'\0');
++	MultiByteToWideChar(CP_UTF8, 0, path.c_str(), -1, &wpath[0], len);
++	struct _stat64 st;
++	return _wstat64(wpath.c_str(), &st) == 0;
++}
++
++static std::string uwp_find_game()
++{
++	const char *dirs[] = {
++		SDL_WinRTGetFSPathUTF8(SDL_WINRT_PATH_LOCAL_FOLDER),
++		SDL_WinRTGetFSPathUTF8(SDL_WINRT_PATH_INSTALLED_LOCATION),
++	};
++	const char *names[] = {"game.love", "game"};
++
++	for (const char *dir : dirs)
++	{
++		if (dir == nullptr)
++			continue;
++		for (const char *name : names)
++		{
++			std::string path = std::string(dir) + "\\" + name;
++			if (uwp_path_exists(path))
++				return path;
++		}
++	}
++
++	const char *installed = SDL_WinRTGetFSPathUTF8(SDL_WINRT_PATH_INSTALLED_LOCATION);
++	if (installed != nullptr)
++	{
++		std::string path = std::string(installed) + "\\nogame";
++		if (uwp_path_exists(path))
++			return path;
++	}
++
++	return "";
++}
++
++#endif // LOVE_WINDOWS_UWP
++
+ #ifdef LOVE_LEGENDARY_APP_ARGV_HACK
+ 
+ #include <vector>
+@@ -163,6 +216,10 @@ static DoneAction runlove(int argc, char **argv, int &retval)
+ 	lua_State *L = luaL_newstate();
+ 	luaL_openlibs(L);
+ 
++#ifdef LOVE_WINDOWS_UWP
++	luaJIT_setmode(L, 0, LUAJIT_MODE_ENGINE | LUAJIT_MODE_OFF);
++#endif
++
+ 	// LuaJIT-specific setup needs to be done as early as possible - before
+ 	// get_app_arguments because that loads external library code. This is also
+ 	// loaded inside love's Lua threads. Note that it doesn't use the love table.
+@@ -270,6 +327,26 @@ int main(int argc, char **argv)
+ 		return 1;
+ 	}
+ 
++#ifdef LOVE_WINDOWS_UWP
++	SDL_SetHint(SDL_HINT_WINRT_HANDLE_BACK_BUTTON, "1");
++
++	std::vector<char *> uwp_argv(argv, argv + argc);
++	std::string uwp_fused = "--fused";
++	std::string uwp_game;
++	if (argc <= 1)
++	{
++		uwp_game = uwp_find_game();
++		if (!uwp_game.empty())
++		{
++			uwp_argv.push_back(&uwp_fused[0]);
++			uwp_argv.push_back(&uwp_game[0]);
++		}
++	}
++	argc = (int) uwp_argv.size();
++	uwp_argv.push_back(nullptr);
++	argv = uwp_argv.data();
++#endif
++
+ 	int retval = 0;
+ 	DoneAction done = DONE_QUIT;
+ 
+diff --git i/src/modules/system/System.cpp w/src/modules/system/System.cpp
+index b792659..3723975 100644
+--- i/src/modules/system/System.cpp
++++ w/src/modules/system/System.cpp
+@@ -35,6 +35,9 @@
+ #include <shlobj.h>
+ #include <shellapi.h>
+ #pragma comment(lib, "shell32.lib")
++#ifdef LOVE_WINDOWS_UWP
++#include <SDL_misc.h>
++#endif
+ #endif
+ #if defined(LOVE_ANDROID)
+ #include "common/android.h"
+@@ -149,9 +152,7 @@ bool System::openURL(const std::string &url) const
+ 
+ #if defined(LOVE_WINDOWS_UWP)
+ 	
+-	Platform::String^ urlString = ref new Platform::String(wurl.c_str());
+-	auto uwpUri = ref new Windows::Foundation::Uri(urlString);
+-	Windows::System::Launcher::LaunchUriAsync(uwpUri);
++	return SDL_OpenURL(url.c_str()) == 0;
+ 
+ #else
+ 
+diff --git i/src/modules/window/sdl/Window.cpp w/src/modules/window/sdl/Window.cpp
+index e9175f3..9ab8ca3 100644
+--- i/src/modules/window/sdl/Window.cpp
++++ w/src/modules/window/sdl/Window.cpp
+@@ -44,8 +44,10 @@
+ 
+ #if defined(LOVE_WINDOWS)
+ #include <windows.h>
++#ifndef LOVE_WINDOWS_UWP
+ #include <dwmapi.h>
+ #include <VersionHelpers.h>
++#endif
+ #elif defined(LOVE_MACOSX)
+ #include "common/macosx.h"
+ #endif
+@@ -1021,7 +1023,7 @@ bool Window::isMinimized() const
+ 
+ void Window::swapBuffers()
+ {
+-#ifdef LOVE_WINDOWS
++#if defined(LOVE_WINDOWS) && !defined(LOVE_WINDOWS_UWP)
+ 	bool useDwmFlush = false;
+ 	int swapInterval = getVSync();
+ 
+@@ -1065,7 +1067,7 @@ void Window::swapBuffers()
+ 
+ 	SDL_GL_SwapWindow(window);
+ 
+-#ifdef LOVE_WINDOWS
++#if defined(LOVE_WINDOWS) && !defined(LOVE_WINDOWS_UWP)
+ 	if (useDwmFlush)
+ 	{
+ 		DwmFlush();
