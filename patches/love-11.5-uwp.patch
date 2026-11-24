@@ -23,7 +23,7 @@ index 5cc1679..76843a0 100644
      WSACleanup ();
  }
 diff --git i/src/love.cpp w/src/love.cpp
-index 97673a3..4992231 100644
+index 97673a3..b015ee0 100644
 --- i/src/love.cpp
 +++ w/src/love.cpp
 @@ -30,6 +30,9 @@ extern "C" {
@@ -36,7 +36,7 @@ index 97673a3..4992231 100644
  }
  
  #ifdef LOVE_WINDOWS
-@@ -61,6 +64,56 @@ LOVE_EXPORT DWORD AmdPowerXpressRequestHighPerformance = 1;
+@@ -61,6 +64,58 @@ LOVE_EXPORT DWORD AmdPowerXpressRequestHighPerformance = 1;
  }
  #endif // LOVE_WINDOWS
  
@@ -45,6 +45,8 @@ index 97673a3..4992231 100644
 +#include <string>
 +#include <vector>
 +#include <sys/stat.h>
++
++extern "C" void love_uwp_setup_view(void);
 +
 +static bool uwp_path_exists(const std::string &path)
 +{
@@ -93,7 +95,7 @@ index 97673a3..4992231 100644
  #ifdef LOVE_LEGENDARY_APP_ARGV_HACK
  
  #include <vector>
-@@ -163,6 +216,10 @@ static DoneAction runlove(int argc, char **argv, int &retval)
+@@ -163,6 +218,10 @@ static DoneAction runlove(int argc, char **argv, int &retval)
  	lua_State *L = luaL_newstate();
  	luaL_openlibs(L);
  
@@ -104,11 +106,12 @@ index 97673a3..4992231 100644
  	// LuaJIT-specific setup needs to be done as early as possible - before
  	// get_app_arguments because that loads external library code. This is also
  	// loaded inside love's Lua threads. Note that it doesn't use the love table.
-@@ -270,6 +327,26 @@ int main(int argc, char **argv)
+@@ -270,6 +329,27 @@ int main(int argc, char **argv)
  		return 1;
  	}
  
 +#ifdef LOVE_WINDOWS_UWP
++	love_uwp_setup_view();
 +	SDL_SetHint(SDL_HINT_WINRT_HANDLE_BACK_BUTTON, "1");
 +
 +	std::vector<char *> uwp_argv(argv, argv + argc);
