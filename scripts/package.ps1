@@ -72,12 +72,15 @@ foreach ($img in $images) {
     $g.TextRenderingHint = 'AntiAliasGridFit'
     $g.Clear([System.Drawing.Color]::FromArgb(231, 74, 153))
     $size = [Math]::Max(6, [Math]::Min($img.W, $img.H) * 0.28)
-    $font = New-Object System.Drawing.Font 'Segoe UI', $size, ([System.Drawing.FontStyle]::Bold), ([System.Drawing.GraphicsUnit]::Pixel)
-    $format = New-Object System.Drawing.StringFormat
-    $format.Alignment = 'Center'
-    $format.LineAlignment = 'Center'
-    $rect = New-Object System.Drawing.RectangleF 0, 0, $img.W, $img.H
-    $g.DrawString([string][char]0x4C + [char]0xD6 + 'VE', $font, [System.Drawing.Brushes]::White, $rect, $format)
+    $path = New-Object System.Drawing.Drawing2D.GraphicsPath
+    $family = New-Object System.Drawing.FontFamily 'Segoe UI'
+    $path.AddString([string][char]0x4C + [char]0xD6 + 'VE', $family, [int][System.Drawing.FontStyle]::Bold, [single]$size, (New-Object System.Drawing.PointF 0, 0), [System.Drawing.StringFormat]::GenericTypographic)
+    $bounds = $path.GetBounds()
+    $matrix = New-Object System.Drawing.Drawing2D.Matrix
+    $matrix.Translate([single]($img.W / 2 - ($bounds.X + $bounds.Width / 2)), [single]($img.H / 2 - ($bounds.Y + $bounds.Height / 2)))
+    $path.Transform($matrix)
+    $g.FillPath([System.Drawing.Brushes]::White, $path)
+    $path.Dispose()
     $g.Dispose()
     $bmp.Save((Join-Path $assets $img.Name), [System.Drawing.Imaging.ImageFormat]::Png)
     $bmp.Dispose()

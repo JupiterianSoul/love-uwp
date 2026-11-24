@@ -8,7 +8,7 @@ The package ships with no game in it. You bring your own `game.love`.
 
 ## Status
 
-Work in progress. The goal is a package that boots on Xbox Series consoles in Dev Mode and runs regular LÖVE 11.5 games with a controller. Check the Releases page for the latest build; if there is none yet, the CI is still being sorted out.
+Early. CI builds a signed x64 package and the binaries only import APIs that are allowed in UWP apps, but it has not been run on real Xbox hardware yet. Expect rough edges. Builds are published on the Releases page as prereleases.
 
 ## What is in the build
 
