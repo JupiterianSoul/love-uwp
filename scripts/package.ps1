@@ -21,7 +21,7 @@ $bin = $exe.DirectoryName
 Write-Host 'Taking binaries from' $bin
 
 Copy-Item $exe.FullName $layout
-foreach ($dll in 'love.dll', 'SDL2.dll', 'OpenAL32.dll') {
+foreach ($dll in 'SDL2.dll', 'OpenAL32.dll') {
     $file = Join-Path $bin $dll
     if (-not (Test-Path $file)) {
         $found = Get-ChildItem -Path $build -Recurse -Filter $dll |

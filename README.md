@@ -14,7 +14,7 @@ Work in progress. The goal is a package that boots on Xbox Series consoles in De
 
 | Piece | Version | Notes |
 | --- | --- | --- |
-| LÖVE | 11.5 | patched for UWP, see `patches/` |
+| LÖVE | 11.5 | patched for UWP (see `patches/`), linked into a single love.exe |
 | SDL2 | 2.30.9 | WinRT backend, gamepads through Windows.Gaming.Input |
 | ANGLE | ANGLE.WindowsStore 2.1.13 (NuGet) | OpenGL ES 2 on top of Direct3D 11 |
 | LuaJIT | 2.1 (megasource 11.5 snapshot) | built with `_UWP`, JIT compiler turned off, interpreter only |

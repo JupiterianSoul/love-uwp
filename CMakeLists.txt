@@ -105,7 +105,9 @@ set(MEGA_3P
 	${MEGA_FREETYPE}
 )
 
+set(LOVE_LIB_TYPE STATIC)
 add_subdirectory("${LOVE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}/love")
+set_target_properties(liblove PROPERTIES OUTPUT_NAME liblove RELEASE_OUTPUT_NAME liblove DEBUG_OUTPUT_NAME liblove)
 
 foreach(MEGA_LIB ${MEGA_3P})
 	disable_warnings(${MEGA_LIB})
