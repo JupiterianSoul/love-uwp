@@ -38,6 +38,19 @@ Copy-Item -Recurse (Join-Path $root 'package\nogame') $layout
 Copy-Item (Join-Path $root 'LICENSE') (Join-Path $layout 'license.txt')
 Copy-Item -Recurse (Join-Path $root 'licenses') $layout
 
+. (Join-Path $PSScriptRoot 'vsenv.ps1')
+$forbidden = @('winmm.dll', 'dwmapi.dll', 'opengl32.dll', 'lua51.dll')
+foreach ($bin in Get-ChildItem $layout -Filter '*.exe') {
+    $imports = dumpbin /nologo /dependents $bin.FullName | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '\.dll$' }
+    Write-Host "$($bin.Name) imports: $($imports -join ', ')"
+    $bad = $imports | Where-Object { $forbidden -contains $_.ToLower() }
+    if ($bad) { Write-Warning "$($bin.Name) imports desktop-only DLLs: $($bad -join ', ')" }
+}
+foreach ($bin in Get-ChildItem $layout -Filter '*.dll') {
+    $imports = dumpbin /nologo /dependents $bin.FullName | ForEach-Object { $_.Trim() } | Where-Object { $_ -match '\.dll$' }
+    Write-Host "$($bin.Name) imports: $($imports -join ', ')"
+}
+
 $manifest = Get-Content -Raw -Encoding UTF8 (Join-Path $root 'package\AppxManifest.xml')
 $manifest = $manifest.Replace('@VERSION@', $Version)
 [System.IO.File]::WriteAllText((Join-Path $layout 'AppxManifest.xml'), $manifest, (New-Object System.Text.UTF8Encoding $false))
