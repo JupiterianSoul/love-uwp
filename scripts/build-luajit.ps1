@@ -18,6 +18,9 @@ $text = [System.IO.File]::ReadAllText($bat)
 $static = "%LJCOMPILE% lj_*.c lib_*.c"
 if (-not $text.Contains($static)) { throw 'Unexpected msvcbuild.bat layout' }
 $text = $text.Replace($static, "%LJCOMPILE% /MD /D_UWP /DWINAPI_FAMILY=WINAPI_FAMILY_APP lj_*.c lib_*.c")
+$before = $text
+$text = $text -replace '(%LJLIB% /OUT:%LJLIBNAME% lj_\*\.obj lib_\*\.obj\r?\n@if errorlevel 1 goto :BAD\r?\n)@goto :MTDLL', '$1@goto :END'
+if ($text -eq $before) { throw 'Could not skip the luajit.exe step in msvcbuild.bat' }
 [System.IO.File]::WriteAllText($bat, $text)
 
 Push-Location $src
