@@ -129,3 +129,7 @@ set_source_files_properties(
 )
 
 target_link_libraries(liblove bcrypt)
+target_compile_definitions(love_3p_luasocket PRIVATE LUASOCKET_HAVE_SETFUNCS)
+
+target_link_libraries(love vccorlib msvcrt)
+set_property(TARGET love APPEND_STRING PROPERTY LINK_FLAGS " /NODEFAULTLIB:vccorlib /NODEFAULTLIB:msvcrt")

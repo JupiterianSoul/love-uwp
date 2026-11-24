@@ -38,6 +38,18 @@ index 5cc1679..76843a0 100644
  
      WSACleanup ();
  }
+diff --git i/src/libraries/luasocket/libluasocket/compat.c w/src/libraries/luasocket/libluasocket/compat.c
+index c2d99cb..ff571c7 100644
+--- i/src/libraries/luasocket/libluasocket/compat.c
++++ w/src/libraries/luasocket/libluasocket/compat.c
+@@ -1,6 +1,6 @@
+ #include "compat.h"
+ 
+-#if LUA_VERSION_NUM==501
++#if LUA_VERSION_NUM==501 && !defined(LUASOCKET_HAVE_SETFUNCS)
+ /*
+ ** Adapted from Lua 5.2
+ */
 diff --git i/src/love.cpp w/src/love.cpp
 index 97673a3..b015ee0 100644
 --- i/src/love.cpp
