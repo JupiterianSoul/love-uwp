@@ -13,22 +13,18 @@ Copy-Item -Recurse (Join-Path $deps 'megasource-11.5\libs\LuaJIT') $work
 Set-Content -Path (Join-Path $work '.relver') -Value '1693350652' -NoNewline
 
 $src = Join-Path $work 'src'
+$bat = Join-Path $src 'msvcbuild.bat'
+$text = [System.IO.File]::ReadAllText($bat)
+$static = "%LJCOMPILE% lj_*.c lib_*.c"
+if (-not $text.Contains($static)) { throw 'Unexpected msvcbuild.bat layout' }
+$text = $text.Replace($static, "%LJCOMPILE% /MD /D_UWP /DWINAPI_FAMILY=WINAPI_FAMILY_APP lj_*.c lib_*.c")
+[System.IO.File]::WriteAllText($bat, $text)
+
 Push-Location $src
 try {
     cmd /c 'msvcbuild.bat static'
     if ($LASTEXITCODE -ne 0) { throw 'msvcbuild.bat failed' }
-
-    Get-ChildItem -Filter 'lj_*.obj' | Where-Object { $_.Name -ne 'lj_vm.obj' } | Remove-Item
-    Get-ChildItem -Filter 'lib_*.obj' | Remove-Item
-    Remove-Item 'lua51.lib'
-
-    $cfiles = @(Get-ChildItem -Filter 'lj_*.c') + @(Get-ChildItem -Filter 'lib_*.c') | ForEach-Object { $_.Name }
-    & cl /nologo /c /O2 /W3 /MD /D_CRT_SECURE_NO_DEPRECATE /D_UWP /DWINAPI_FAMILY=WINAPI_FAMILY_APP $cfiles
-    if ($LASTEXITCODE -ne 0) { throw 'Compiling LuaJIT for UWP failed' }
-
-    $objs = @(Get-ChildItem -Filter 'lj_*.obj') + @(Get-ChildItem -Filter 'lib_*.obj') | ForEach-Object { $_.Name }
-    & lib /nologo /nodefaultlib /OUT:lua51.lib $objs
-    if ($LASTEXITCODE -ne 0) { throw 'Creating lua51.lib failed' }
+    if (-not (Test-Path 'lua51.lib')) { throw 'lua51.lib was not built' }
 }
 finally {
     Pop-Location

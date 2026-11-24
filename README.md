@@ -15,10 +15,10 @@ Work in progress. The goal is a package that boots on Xbox Series consoles in De
 | Piece | Version | Notes |
 | --- | --- | --- |
 | LÖVE | 11.5 | patched for UWP, see `patches/` |
-| SDL2 | 2.30.x | WinRT backend, gamepads through Windows.Gaming.Input |
+| SDL2 | 2.30.9 | WinRT backend, gamepads through Windows.Gaming.Input |
 | ANGLE | ANGLE.WindowsStore 2.1.13 (NuGet) | OpenGL ES 2 on top of Direct3D 11 |
 | LuaJIT | 2.1 (megasource 11.5 snapshot) | built with `_UWP`, JIT compiler turned off, interpreter only |
-| OpenAL Soft | 1.23.1 | WASAPI backend |
+| OpenAL Soft | 1.24.3 | WASAPI backend (the first release with UWP support) |
 | FreeType, zlib, libogg, libvorbis, libtheora | from megasource 11.5 | |
 
 Not included on UWP: libmodplug and mpg123 (LÖVE already disables them for UWP builds), so tracker modules and MP3 files will not play. Ogg Vorbis and WAV work.
@@ -36,7 +36,7 @@ If it finds nothing, it shows a screen explaining where to put the file.
 
 On Xbox, the easiest way to get `game.love` into LocalState is the Device Portal: open `https://<console-ip>:11443`, go to File explorer, find the app under LocalAppData, open `LocalState` and upload the file there.
 
-Save files go to the same LocalState folder, under `LocalState/love/<identity>`.
+The game runs in fused mode, so save files go to `LocalState/<identity>`, next to `game.love`.
 
 ## Installing on an Xbox in Dev Mode
 
